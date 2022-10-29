@@ -11,6 +11,7 @@ mod sprites;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum InGameState {
+    LoadMap,
     AwaitingInput,
     GameTurn,
     CleanUp,

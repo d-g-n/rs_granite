@@ -1,9 +1,8 @@
-use bevy::{prelude::*, render::camera::ScalingMode};
+use bevy::prelude::*;
 use bevy_asset_loader::prelude::{AssetCollection, LoadingState, LoadingStateAppExt};
 use iyes_loopless::prelude::*;
-use rand::{Rng, SeedableRng};
 
-use crate::{rng::GameRNG, GameState, InMenuState};
+use crate::GameState;
 
 pub(crate) struct SpritePlugin;
 
@@ -56,18 +55,12 @@ pub struct SpriteSizes {
     pub text_sprite_height: f32,
 }
 
-fn setup_sprites(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    sprite_assets: Res<SpriteAssets>,
-    mut rng: ResMut<GameRNG>,
-    texture_atlases: Res<Assets<TextureAtlas>>,
-) {
+fn setup_sprites(mut commands: Commands) {
     /* commands.insert_resource(NextState(GameState::InMenu {
         menu_state: InMenuState::MainMenu,
     })) */
 
     commands.insert_resource(NextState(GameState::InGame {
-        game_state: crate::InGameState::AwaitingInput,
+        game_state: crate::InGameState::LoadMap,
     }))
 }

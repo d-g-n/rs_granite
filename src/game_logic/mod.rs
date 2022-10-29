@@ -8,6 +8,7 @@ use crate::{screen::ScreenContext, GameState};
 use self::components::{Position, Renderable};
 
 mod components;
+mod map;
 mod player;
 
 pub(crate) struct GameLogicPlugin;
@@ -15,6 +16,7 @@ pub(crate) struct GameLogicPlugin;
 impl Plugin for GameLogicPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(player::PlayerPlugin)
+            .add_plugin(map::MapPlugin)
             .add_system(handle_renderable.run_if(
                 move |cur_state: Res<CurrentState<GameState>>| match cur_state.0 {
                     GameState::InMenu { .. } => true,

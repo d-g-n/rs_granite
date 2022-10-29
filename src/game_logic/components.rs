@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-#[derive(Component, Eq, Hash, PartialEq, Clone)]
+#[derive(Component, Eq, Hash, PartialEq, Clone, Debug)]
 pub struct Position {
     pub x: i32,
     pub y: i32,
@@ -15,3 +15,6 @@ pub struct Renderable {
 
 #[derive(Component)]
 pub struct Player {}
+
+#[derive(Component)]
+pub struct Blocker {}

@@ -10,7 +10,7 @@ pub struct GameRNG {
 impl GameRNG {
     pub fn new() -> GameRNG {
         GameRNG {
-            rng_generator: rand_chacha::ChaCha8Rng::seed_from_u64(10),
+            rng_generator: rand_chacha::ChaCha8Rng::seed_from_u64(100),
             dice_regex: Regex::new("(\\d+)?d(\\d+)([\\+\\-]\\d+)?").unwrap(),
         }
     }
