@@ -74,6 +74,16 @@ impl ScreenContext {
     pub fn get_tile(&mut self, x: usize, y: usize) -> &mut ScreenTile {
         &mut self.screen_vec[y][x]
     }
+
+    pub fn clear(&mut self) {
+        for (y, inner_vec) in self.screen_vec.iter_mut().enumerate() {
+            for (x, mut screen_tile) in inner_vec.iter_mut().enumerate() {
+                screen_tile.glyph = 0;
+                screen_tile.fg_color = Color::BLACK;
+                screen_tile.fg_color = Color::BLACK;
+            }
+        }
+    }
 }
 
 pub fn init_screen(
@@ -142,6 +152,8 @@ pub fn render_screen(
         &mut Sprite,
     )>,
 ) {
+    //ctx.clear();
+
     for (_entity, screen_tile_pos, mut visibility, mut transform, mut fg_sprite, mut bg_sprite) in
         query.iter_mut()
     {

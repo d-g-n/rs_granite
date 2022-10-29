@@ -63,7 +63,11 @@ fn setup_sprites(
     mut rng: ResMut<GameRNG>,
     texture_atlases: Res<Assets<TextureAtlas>>,
 ) {
-    commands.insert_resource(NextState(GameState::InMenu {
+    /* commands.insert_resource(NextState(GameState::InMenu {
         menu_state: InMenuState::MainMenu,
+    })) */
+
+    commands.insert_resource(NextState(GameState::InGame {
+        game_state: crate::InGameState::AwaitingInput,
     }))
 }

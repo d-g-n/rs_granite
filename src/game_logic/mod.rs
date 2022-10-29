@@ -32,6 +32,8 @@ pub fn handle_renderable(
 ) {
     let mut position_visibility_history: HashMap<Position, f32> = HashMap::new();
 
+    ctx.clear();
+
     for (entity, position, mut renderable) in query.iter_mut() {
         let mut screen_tile = ctx.get_tile(position.x as usize, position.y as usize);
 
