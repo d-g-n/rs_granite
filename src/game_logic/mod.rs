@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use bevy::prelude::*;
 use iyes_loopless::prelude::*;
 
-use crate::{screen::ScreenContext, GameState};
+use crate::{screen::ScreenContext, GameState, InGameState};
 
 use self::components::{Position, Renderable};
 
@@ -19,6 +19,9 @@ impl Plugin for GameLogicPlugin {
             .add_plugin(map::MapPlugin)
             .add_system(handle_renderable.run_if(
                 move |cur_state: Res<CurrentState<GameState>>| match cur_state.0 {
+                    GameState::InGame {
+                        game_state: InGameState::LoadMap,
+                    } => false,
                     GameState::InMenu { .. } => true,
                     GameState::InGame { .. } => true,
                     _ => false,

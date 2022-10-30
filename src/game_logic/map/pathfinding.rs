@@ -42,8 +42,8 @@ impl Position {
         ]
         .into_iter()
         .filter(|p| p.is_valid(map))
-        .filter(|p| !map.tiles[p.y as usize][p.x as usize].is_blocker())
-        .map(|p| (p, 1))
+        .filter(|p| !map.tiles[p.x as usize][p.y as usize].is_blocker())
+        .map(|p| (p.clone(), self.distance(&p)))
         .collect();
 
         res

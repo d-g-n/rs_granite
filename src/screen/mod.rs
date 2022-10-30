@@ -1,5 +1,3 @@
-
-
 use crate::{
     sprites::{SpriteAssets, SpriteSizes},
     GameState,
@@ -51,12 +49,12 @@ impl Plugin for ScreenPlugin {
 
 impl ScreenContext {
     pub fn new(width: usize, height: usize) -> ScreenContext {
-        let mut new_screen_vec = vec![vec![ScreenTile::default(); width]; height];
+        let mut new_screen_vec = vec![vec![ScreenTile::default(); height]; width];
 
-        for (y, inner_vec) in new_screen_vec.iter_mut().enumerate() {
-            for (x, mut screen_tile) in inner_vec.iter_mut().enumerate() {
-                screen_tile.x = x;
-                screen_tile.y = y;
+        for x in 0..width {
+            for y in 0..height {
+                new_screen_vec[x][y].x = x;
+                new_screen_vec[x][y].y = y;
             }
         }
 
@@ -68,11 +66,11 @@ impl ScreenContext {
     }
 
     pub fn set_tile(&mut self, x: usize, y: usize, screen_tile: ScreenTile) {
-        self.screen_vec[y][x] = screen_tile;
+        self.screen_vec[x][y] = screen_tile;
     }
 
     pub fn get_tile(&mut self, x: usize, y: usize) -> &mut ScreenTile {
-        &mut self.screen_vec[y][x]
+        &mut self.screen_vec[x][y]
     }
 
     pub fn clear(&mut self) {
