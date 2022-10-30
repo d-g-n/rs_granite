@@ -10,6 +10,7 @@ use self::components::{Position, Renderable};
 mod components;
 mod map;
 mod player;
+mod resources;
 
 pub(crate) struct GameLogicPlugin;
 

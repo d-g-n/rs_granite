@@ -6,7 +6,12 @@ use iyes_loopless::prelude::*;
 use crate::{
     game_logic::{
         components::{Blocker, Position, Renderable},
-        map::builder::{MapBuilder, MapWithSquareRoom},
+        map::builder::{
+            DrunkardsWalkMapGenerator, MapBuilder, RandomFreeSpaceSpawn,
+            ReplaceVisibleWallsWithBreakableMapGenerator, SquareRoomMapGenerator,
+            SymmetricalMapGenerator,
+        },
+        resources::PlayerResource,
     },
     rng::GameRNG,
     screen::ScreenContext,
@@ -16,7 +21,7 @@ use crate::{
 pub mod builder;
 pub mod pathfinding;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, PartialOrd, Eq)]
 pub enum GameTile {
     Floor,
     Wall,
@@ -83,6 +88,62 @@ impl GameMap {
     pub fn clear_history(&mut self) {
         self.history.clear();
     }
+
+    pub fn get_tile_pos_by_type(&mut self, tile: GameTile) -> Vec<(usize, usize)> {
+        let mut res_vec = Vec::new();
+
+        for x in 0..self.width {
+            for y in 0..self.height {
+                if self.tiles[x][y] == tile {
+                    res_vec.push((x, y));
+                }
+            }
+        }
+
+        res_vec
+    }
+
+    pub fn get_adjacent_tiles(&mut self, pos: (i32, i32)) -> Vec<(usize, usize, GameTile)> {
+        let (x, y) = pos;
+        let adjacent_coords = vec![
+            (x, y + 1),     // North
+            (x, y - 1),     // South
+            (x + 1, y),     // East
+            (x - 1, y),     // West
+            (x + 1, y + 1), // NE
+            (x - 1, y + 1), // NW
+            (x + 1, y - 1), // SE
+            (x - 1, y - 1), // SW
+        ];
+
+        let mut res_vec = Vec::new();
+
+        for (new_x, new_y) in adjacent_coords {
+            if new_x < 0 || new_y < 0 || new_x >= self.width as i32 || new_y >= self.height as i32 {
+                continue;
+            }
+            res_vec.push((
+                new_x as usize,
+                new_y as usize,
+                self.tiles[new_x as usize][new_y as usize],
+            ))
+        }
+
+        res_vec
+    }
+
+    pub fn get_adjacent_count_by_type(&mut self, pos: (i32, i32), tile: GameTile) -> usize {
+        let adjacent_tiles = self.get_adjacent_tiles(pos);
+        let mut res_count = 0;
+
+        for (_x, _y, adjacent_tile) in adjacent_tiles {
+            if adjacent_tile == tile {
+                res_count += 1;
+            }
+        }
+
+        res_count
+    }
 }
 
 pub(crate) struct MapPlugin;
@@ -120,12 +181,35 @@ fn create_or_load_map(mut commands: Commands, ctx: Res<ScreenContext>, mut rng: 
 
     let mut initial_map_builder = MapBuilder::new(ctx.width, ctx.height);
 
-    let map_builder =
-        initial_map_builder.with_generator(rng.as_mut(), Box::new(MapWithSquareRoom {}));
+    let map_builder = initial_map_builder
+        .with_generator(rng.as_mut(), Box::new(SquareRoomMapGenerator {}))
+        .with_generator(
+            rng.as_mut(),
+            Box::new(DrunkardsWalkMapGenerator {
+                target_num_drunkards: 50,
+                drunkard_lifetime: 50,
+            }),
+        )
+        .with_generator(
+            rng.as_mut(),
+            Box::new(SymmetricalMapGenerator {
+                horizontal_symmetry: true,
+                vertical_symmetry: true,
+            }),
+        )
+        .with_generator(rng.as_mut(), Box::new(RandomFreeSpaceSpawn {}))
+        .with_generator(
+            rng.as_mut(),
+            Box::new(ReplaceVisibleWallsWithBreakableMapGenerator {}),
+        );
 
     let new_map = map_builder.get_map();
 
     commands.insert_resource(new_map);
+
+    commands.insert_resource(PlayerResource {
+        start_pos: map_builder.get_spawn_position(),
+    });
 
     commands.insert_resource(MapVisualisation {
         tick_count_ms: 0,
@@ -220,5 +304,3 @@ fn finalise_map_creation(mut commands: Commands, mut map: ResMut<GameMap>) {
     commands.spawn_batch(tile_components);
     commands.spawn_batch(tile_components_blockers);
 }
-
-fn draw_map(ctx: &ScreenContext, map: &GameMap) {}

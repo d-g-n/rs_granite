@@ -1,4 +1,9 @@
-use rand::{Rng, SeedableRng};
+use std::ops::Range;
+
+use rand::{
+    distributions::uniform::{SampleRange, SampleUniform},
+    Rng, SeedableRng,
+};
 use rand_chacha::ChaCha8Rng;
 use regex::Regex;
 
@@ -10,13 +15,17 @@ pub struct GameRNG {
 impl GameRNG {
     pub fn new() -> GameRNG {
         GameRNG {
-            rng_generator: rand_chacha::ChaCha8Rng::seed_from_u64(100),
+            rng_generator: rand_chacha::ChaCha8Rng::seed_from_u64(10),
             dice_regex: Regex::new("(\\d+)?d(\\d+)([\\+\\-]\\d+)?").unwrap(),
         }
     }
 
     pub fn rand_i32(&mut self) -> i32 {
         self.rng_generator.gen()
+    }
+
+    pub fn rand_range(&mut self, range: Range<i32>) -> i32 {
+        self.rng_generator.gen_range(range)
     }
 
     pub fn rand_dice(&mut self, dice_str: &str) -> i32 {

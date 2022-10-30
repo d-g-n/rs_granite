@@ -6,15 +6,16 @@ use crate::{
     game_logic::{
         components::{Blocker, Player, Position, Renderable},
         map::{pathfinding::astar_next_step, GameMap},
+        resources::PlayerResource,
     },
     screen::{ScreenContext, ScreenTile},
 };
 
-pub fn setup_player(mut commands: Commands) {
+pub fn setup_player(mut commands: Commands, player_res: Res<PlayerResource>) {
     commands
         .spawn()
         .insert(Player {})
-        .insert(Position { x: 0, y: 0 })
+        .insert(player_res.start_pos.clone())
         .insert(Renderable {
             glyph: '@' as u16,
             fg: Color::YELLOW,
