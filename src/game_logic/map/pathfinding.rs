@@ -3,8 +3,9 @@ use iyes_loopless::prelude::*;
 
 use crate::game_logic::components::Position;
 
-use super::GameMap;
 use pathfinding::prelude::astar;
+
+use super::game_map::GameMap;
 
 impl Position {
     fn is_valid(&self, map: &GameMap) -> bool {
@@ -42,7 +43,7 @@ impl Position {
         ]
         .into_iter()
         .filter(|p| p.is_valid(map))
-        .filter(|p| !map.tiles[p.x as usize][p.y as usize].is_blocker())
+        .filter(|p| !map.tiles[map.xy_idx(p.x as usize, p.y as usize)].is_blocker())
         .map(|p| (p.clone(), self.distance(&p)))
         .collect();
 

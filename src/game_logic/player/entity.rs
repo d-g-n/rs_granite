@@ -5,7 +5,7 @@ use bevy::prelude::*;
 use crate::{
     game_logic::{
         components::{Blocker, Player, Position, Renderable},
-        map::{pathfinding::astar_next_step, GameMap},
+        map::{pathfinding::astar_next_step, game_map::GameMap},
         resources::PlayerResource,
     },
     screen::{ScreenContext, ScreenTile},

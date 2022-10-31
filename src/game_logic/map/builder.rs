@@ -3,7 +3,7 @@ use iyes_loopless::prelude::*;
 
 use crate::{game_logic::components::Position, rng::GameRNG};
 
-use super::{GameMap, GameMapTiles2D, GameTile};
+use super::game_map::{GameMap, GameMapTiles2D, GameTile};
 
 type BoxedMapGenerator = Box<dyn MapGenerator>;
 
@@ -66,7 +66,9 @@ impl MapGenerator for SquareRoomMapGenerator {
     fn generate_map(&self, mut in_map: GameMap, rng: &mut GameRNG) -> GameMap {
         for x in 0..in_map.width {
             for y in 0..in_map.height / 2 {
-                in_map.tiles[x][y] = GameTile::UnbreakableWall;
+                let idx = in_map.xy_idx(x, y);
+
+                in_map.tiles[idx] = GameTile::UnbreakableWall;
             }
         }
         in_map.snapshot();
@@ -97,8 +99,9 @@ impl MapGenerator for DrunkardsWalkMapGenerator {
         for i in 0..self.target_num_drunkards {
             let walls = in_map.get_tile_pos_by_type(GameTile::UnbreakableWall);
             let mut random_wall_pos = walls[rng.rand_range(0..walls.len() as i32) as usize];
+            let idx = in_map.xy_idx(random_wall_pos.0, random_wall_pos.1);
 
-            in_map.tiles[random_wall_pos.0][random_wall_pos.1] = GameTile::Floor;
+            in_map.tiles[idx] = GameTile::Floor;
 
             in_map.snapshot();
 
@@ -129,7 +132,9 @@ impl MapGenerator for DrunkardsWalkMapGenerator {
                 cur_tile_pos.0 = new_x;
                 cur_tile_pos.1 = new_y;
 
-                in_map.tiles[cur_tile_pos.0 as usize][cur_tile_pos.1 as usize] = GameTile::Floor;
+                let idx = in_map.xy_idx(cur_tile_pos.0 as usize, cur_tile_pos.1 as usize);
+
+                in_map.tiles[idx] = GameTile::Floor;
             }
             in_map.snapshot();
         }
@@ -154,7 +159,8 @@ impl MapGenerator for SymmetricalMapGenerator {
 
             for x in initial_x..in_map.width {
                 for y in 0..in_map.height {
-                    in_map.tiles[x][y] = in_map.tiles[2 * initial_x - x - 1][y];
+                    let idx = in_map.xy_idx(x, y);
+                    in_map.tiles[idx] = in_map.tiles[in_map.xy_idx(2 * initial_x - x - 1, y)];
                 }
             }
 
@@ -166,7 +172,9 @@ impl MapGenerator for SymmetricalMapGenerator {
 
             for x in 0..in_map.width {
                 for y in initial_y..in_map.height {
-                    in_map.tiles[x][y] = in_map.tiles[x][2 * initial_y - y - 1];
+                    let idx = in_map.xy_idx(x, y);
+
+                    in_map.tiles[idx] = in_map.tiles[in_map.xy_idx(x, 2 * initial_y - y - 1)];
                 }
             }
 
@@ -205,13 +213,94 @@ impl MapGenerator for ReplaceVisibleWallsWithBreakableMapGenerator {
     fn generate_map(&self, mut in_map: GameMap, rng: &mut GameRNG) -> GameMap {
         for x in 0..in_map.width {
             for y in 0..in_map.height {
-                if in_map.tiles[x][y] == GameTile::UnbreakableWall
+                if in_map.tiles[in_map.xy_idx(x, y)] == GameTile::UnbreakableWall
                     && in_map.get_adjacent_count_by_type((x as i32, y as i32), GameTile::Floor) > 0
                 {
-                    in_map.tiles[x][y] = GameTile::Wall;
+                    let idx = in_map.xy_idx(x, y);
+
+                    in_map.tiles[idx] = GameTile::Wall;
                 }
             }
         }
+
+        in_map.snapshot();
+
+        in_map
+    }
+
+    fn get_player_spawn(&self, mut map: GameMap, rng: &mut GameRNG) -> Option<Position> {
+        None
+    }
+}
+
+pub struct BSPRoomMapGenerator {}
+
+#[derive(Clone)]
+struct BSPPartition {
+    start_x: usize,
+    start_y: usize,
+    end_x: usize,
+    end_y: usize,
+    children: Box<Option<(BSPPartition, BSPPartition)>>,
+}
+
+struct BSPArea {
+    start_x: usize,
+    start_y: usize,
+    end_x: usize,
+    end_y: usize,
+}
+
+impl MapGenerator for BSPRoomMapGenerator {
+    fn generate_map(&self, mut in_map: GameMap, rng: &mut GameRNG) -> GameMap {
+        fn split_area(area: BSPArea, rng: &mut GameRNG) -> (BSPArea, BSPArea) {
+            // horizontal or vertical
+            let rand_dir = rng.rand_range_incl(0..=1);
+
+            // width of 6, split it into 5 each
+            // 0 1 2        3 4 5
+            if rand_dir == 0 {
+                // horizontal
+                let rand_x = rng.rand_range_incl(area.start_x as i32..=area.end_x as i32);
+                // say it picks split on 2
+
+                return (
+                    BSPArea {
+                        start_x: area.start_x,
+                        start_y: area.start_y,
+                        end_x: rand_x as usize,
+                        end_y: area.end_y,
+                    },
+                    BSPArea {
+                        start_x: rand_x as usize + 1,
+                        start_y: area.start_y,
+                        end_x: area.end_x,
+                        end_y: area.end_y,
+                    },
+                );
+            } else {
+                // vertical
+
+                let rand_y = rng.rand_range_incl(area.start_y as i32..=area.end_y as i32);
+
+                return (
+                    BSPArea {
+                        start_x: area.start_x,
+                        start_y: area.start_y,
+                        end_x: area.end_x,
+                        end_y: rand_y as usize,
+                    },
+                    BSPArea {
+                        start_x: area.start_x,
+                        start_y: rand_y as usize + 1,
+                        end_x: area.end_x,
+                        end_y: area.end_y,
+                    },
+                );
+            }
+        }
+
+        in_map.draw_square(1, 1, 100, 5, GameTile::Floor, GameTile::Wall);
 
         in_map.snapshot();
 
