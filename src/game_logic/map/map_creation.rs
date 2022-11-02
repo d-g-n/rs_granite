@@ -4,7 +4,13 @@ use iyes_loopless::prelude::*;
 use crate::{
     game_logic::{
         components::{Blocker, Position, Renderable},
-        map::builder::{BSPRoomMapGenerator, MapBuilder, RandomFreeSpaceSpawn},
+        map::{
+            builder::{
+                BSPRoomMapGenerator, DrunkardsWalkMapGenerator, FillRoomGenerator, MapBuilder,
+                RandomFreeSpaceSpawn, ReplaceVisibleWallsWithBreakableMapGenerator,
+            },
+            game_map::GameTile,
+        },
         resources::PlayerResource,
     },
     rng::GameRNG,
@@ -12,7 +18,7 @@ use crate::{
     GameState, InGameState,
 };
 
-use super::game_map::{GameMapTiles2D, GameMap};
+use super::game_map::{GameMap, GameMapTiles2D};
 
 pub struct MapVisualisation {
     tick_count_ms: u128,
@@ -33,8 +39,18 @@ pub fn create_or_load_map(
     let mut initial_map_builder = MapBuilder::new(ctx.width, ctx.height);
 
     let map_builder = initial_map_builder
-        .with_generator(rng.as_mut(), Box::new(RandomFreeSpaceSpawn {}))
-        .with_generator(rng.as_mut(), Box::new(BSPRoomMapGenerator {}));
+        .with_generator(
+            rng.as_mut(),
+            Box::new(FillRoomGenerator {
+                tile: GameTile::UnbreakableWall,
+            }),
+        )
+        .with_generator(rng.as_mut(), Box::new(BSPRoomMapGenerator {}))
+        .with_generator(
+            rng.as_mut(),
+            Box::new(ReplaceVisibleWallsWithBreakableMapGenerator {}),
+        )
+        .with_generator(rng.as_mut(), Box::new(RandomFreeSpaceSpawn {}));
 
     let new_map = map_builder.get_map();
 
@@ -74,7 +90,7 @@ pub fn visualise_map(
 
     map_vis.tick_count_ms += time.delta().as_millis();
 
-    if map_vis.tick_count_ms > 100 {
+    if map_vis.tick_count_ms > 250 {
         let current_frame = &map_vis.history[map_vis.visualisation_index];
 
         for x in 0..ctx.width {

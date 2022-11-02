@@ -13,8 +13,8 @@ impl GameTile {
             GameTile::Floor => '.' as u16,
             GameTile::Wall => '#' as u16,
             GameTile::UnbreakableWall => 178 as u16, // ▓, doesn't like this one
-            GameTile::DownStairs => '▼' as u16,
-            GameTile::UpStairs => '▲' as u16,
+            GameTile::DownStairs => 31 as u16,
+            GameTile::UpStairs => 30 as u16,
         }
     }
 
