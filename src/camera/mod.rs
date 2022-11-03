@@ -1,5 +1,4 @@
-use bevy::{prelude::*, render::camera::ScalingMode, sprite};
-use iyes_loopless::prelude::*;
+use bevy::prelude::*;
 
 use crate::{screen::ScreenContext, sprites::SpriteSizes};
 

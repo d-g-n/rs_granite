@@ -4,6 +4,7 @@ use iyes_loopless::prelude::*;
 use crate::{GameState, InGameState};
 
 pub mod builder;
+pub mod builders;
 pub mod game_map;
 mod map_creation;
 pub mod pathfinding;

@@ -8,6 +8,7 @@ mod game_logic;
 mod rng;
 mod screen;
 mod sprites;
+pub mod utils;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum InGameState {

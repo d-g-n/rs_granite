@@ -32,7 +32,7 @@ impl Plugin for GameLogicPlugin {
 }
 
 pub fn handle_renderable(
-    mut commands: Commands,
+    mut _commands: Commands,
     mut ctx: ResMut<ScreenContext>,
     mut query: Query<(Entity, &Position, &Renderable)>,
 ) {
@@ -40,7 +40,7 @@ pub fn handle_renderable(
 
     ctx.clear();
 
-    for (entity, position, mut renderable) in query.iter_mut() {
+    for (_entity, position, renderable) in query.iter_mut() {
         let mut screen_tile = ctx.get_tile(position.x as usize, position.y as usize);
 
         if !position_visibility_history.contains_key(position) {

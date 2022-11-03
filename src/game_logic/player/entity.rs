@@ -1,14 +1,12 @@
-use std::collections::HashMap;
-
 use bevy::prelude::*;
 
 use crate::{
     game_logic::{
         components::{Blocker, Player, Position, Renderable},
-        map::{pathfinding::astar_next_step, game_map::GameMap},
+        map::{game_map::GameMap, pathfinding::astar_next_step},
         resources::PlayerResource,
     },
-    screen::{ScreenContext, ScreenTile},
+    screen::ScreenContext,
 };
 
 pub fn setup_player(mut commands: Commands, player_res: Res<PlayerResource>) {
@@ -32,7 +30,7 @@ pub struct HeldCounter {
 }
 
 pub fn handle_player_movement(
-    mut commands: Commands,
+    mut _commands: Commands,
     keyboard: Res<Input<KeyCode>>,
     mut ctx: ResMut<ScreenContext>,
     time: Res<Time>,
@@ -63,7 +61,7 @@ pub fn handle_player_movement(
     let new_x = player_pos.x + direction_x;
     let new_y = player_pos.y + direction_y;
 
-    for (entity, position) in blocker_position_query.iter() {
+    for (_entity, position) in blocker_position_query.iter() {
         if position.x == new_x && position.y == new_y {
             return;
         }

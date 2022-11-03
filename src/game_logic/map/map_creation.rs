@@ -5,9 +5,11 @@ use crate::{
     game_logic::{
         components::{Blocker, Position, Renderable},
         map::{
-            builder::{
-                BSPRoomMapGenerator, DrunkardsWalkMapGenerator, FillRoomGenerator, MapBuilder,
-                RandomFreeSpaceSpawn, ReplaceVisibleWallsWithBreakableMapGenerator,
+            builder::MapBuilder,
+            builders::{
+                bsp::BSPRoomMapGenerator,
+                spawns::RandomFreeSpaceSpawn,
+                utils::{FillRoomGenerator, ReplaceVisibleWallsWithBreakableMapGenerator},
             },
             game_map::GameTile,
         },
@@ -36,21 +38,13 @@ pub fn create_or_load_map(
 
     //let new_map = GameMap::new(ctx.width, ctx.height);
 
-    let mut initial_map_builder = MapBuilder::new(ctx.width, ctx.height);
+    let mut initial_map_builder = MapBuilder::new(ctx.width, ctx.height, rng.as_mut());
 
     let map_builder = initial_map_builder
-        .with_generator(
-            rng.as_mut(),
-            Box::new(FillRoomGenerator {
-                tile: GameTile::UnbreakableWall,
-            }),
-        )
-        .with_generator(rng.as_mut(), Box::new(BSPRoomMapGenerator {}))
-        .with_generator(
-            rng.as_mut(),
-            Box::new(ReplaceVisibleWallsWithBreakableMapGenerator {}),
-        )
-        .with_generator(rng.as_mut(), Box::new(RandomFreeSpaceSpawn {}));
+        .with_generator(FillRoomGenerator::new(GameTile::UnbreakableWall))
+        .with_generator(BSPRoomMapGenerator::new())
+        .with_generator(ReplaceVisibleWallsWithBreakableMapGenerator::new())
+        .with_generator(RandomFreeSpaceSpawn::new());
 
     let new_map = map_builder.get_map();
 

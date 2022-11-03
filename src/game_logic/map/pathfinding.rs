@@ -1,6 +1,3 @@
-use bevy::prelude::*;
-use iyes_loopless::prelude::*;
-
 use crate::game_logic::components::Position;
 
 use pathfinding::prelude::astar;
@@ -13,10 +10,10 @@ impl Position {
     }
 
     fn distance(&self, other: &Position) -> u32 {
-        ((self.x.abs_diff(other.x) + self.y.abs_diff(other.y)) as u32)
+        (self.x.abs_diff(other.x) + self.y.abs_diff(other.y)) as u32
     }
 
-    fn distance_squared(&self, other: &Position) -> u32 {
+    /*     fn distance_squared(&self, other: &Position) -> u32 {
         ((self.x.abs_diff(other.x) ^ 2 + self.y.abs_diff(other.y) ^ 2) as u32)
     }
 
@@ -26,7 +23,7 @@ impl Position {
         let d2: f32 = 2.0_f32.sqrt();
 
         ((dx + dy) + (d2 - 2.) * f32::min(dx, dy))
-    }
+    } */
 
     fn successors(&self, map: &GameMap) -> Vec<(Position, u32)> {
         let &Position { x, y } = self;
