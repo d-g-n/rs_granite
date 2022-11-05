@@ -303,8 +303,6 @@ impl MapGenerator for BSPRoomMapGenerator {
                     }
 
                     in_map.snapshot();
-
-                    println!("dog leg")
                 }
             }
         }

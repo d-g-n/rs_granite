@@ -84,7 +84,7 @@ pub fn visualise_map(
 
     map_vis.tick_count_ms += time.delta().as_millis();
 
-    if map_vis.tick_count_ms > 250 {
+    if map_vis.tick_count_ms > 50 {
         let current_frame = &map_vis.history[map_vis.visualisation_index];
 
         for x in 0..ctx.width {
@@ -122,7 +122,7 @@ pub fn finalise_map_creation(mut commands: Commands, mut map: ResMut<GameMap>) {
                     },
                     Renderable {
                         glyph: game_tile.get_char_rep(),
-                        fg: Color::WHITE,
+                        fg: game_tile.default_tile_colour(),
                         bg: Color::BLACK,
                         layer: 0.0,
                     },
@@ -136,7 +136,7 @@ pub fn finalise_map_creation(mut commands: Commands, mut map: ResMut<GameMap>) {
                     },
                     Renderable {
                         glyph: game_tile.get_char_rep(),
-                        fg: Color::WHITE,
+                        fg: game_tile.default_tile_colour(),
                         bg: Color::BLACK,
                         layer: 0.0,
                     },

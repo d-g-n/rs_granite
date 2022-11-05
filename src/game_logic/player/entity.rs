@@ -1,8 +1,10 @@
-use bevy::prelude::*;
+use std::collections::HashSet;
+
+use bevy::{prelude::*, render::view};
 
 use crate::{
     game_logic::{
-        components::{Blocker, Player, Position, Renderable},
+        components::{Blocker, Player, Position, Renderable, Viewshed},
         map::{game_map::GameMap, pathfinding::astar_next_step},
         resources::PlayerResource,
     },
@@ -20,7 +22,12 @@ pub fn setup_player(mut commands: Commands, player_res: Res<PlayerResource>) {
             bg: Color::BLACK,
             layer: 100.0,
         })
-        .insert(Blocker {});
+        .insert(Blocker {})
+        .insert(Viewshed {
+            dirty: true,
+            distance: 8,
+            visible_tiles: HashSet::new(),
+        });
 }
 
 #[derive(Default)]
@@ -36,7 +43,7 @@ pub fn handle_player_movement(
     time: Res<Time>,
     map: Res<GameMap>,
     mut held_counter: Local<HeldCounter>,
-    mut player_position_query: Query<(Entity, &mut Position), With<Player>>,
+    mut player_position_query: Query<(Entity, &mut Position, &mut Viewshed), With<Player>>,
     blocker_position_query: Query<(Entity, &Position), (With<Blocker>, Without<Player>)>,
 ) {
     let (direction_x, direction_y) =
@@ -56,7 +63,7 @@ pub fn handle_player_movement(
             (0, 0)
         };
 
-    let (_entity, mut player_pos) = player_position_query.single_mut();
+    let (_entity, mut player_pos, mut viewshed) = player_position_query.single_mut();
 
     let new_x = player_pos.x + direction_x;
     let new_y = player_pos.y + direction_y;
@@ -76,6 +83,8 @@ pub fn handle_player_movement(
     {
         player_pos.x = new_x;
         player_pos.y = new_y;
+
+        viewshed.dirty = true;
 
         let astar = astar_next_step(&map, player_pos.clone(), Position { x: 1, y: 0 });
 

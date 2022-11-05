@@ -1,3 +1,7 @@
+use bevy::prelude::Color;
+
+use crate::game_logic::components::Position;
+
 #[derive(Clone, Copy, PartialEq, PartialOrd, Eq)]
 pub enum GameTile {
     Floor,
@@ -27,6 +31,26 @@ impl GameTile {
             GameTile::UpStairs => false,
         }
     }
+
+    pub fn is_opaque(&self) -> bool {
+        match self {
+            GameTile::Floor => false,
+            GameTile::Wall => true,
+            GameTile::UnbreakableWall => true,
+            GameTile::DownStairs => false,
+            GameTile::UpStairs => false,
+        }
+    }
+
+    pub fn default_tile_colour(&self) -> Color {
+        match self {
+            GameTile::Floor => Color::GRAY,
+            GameTile::Wall => Color::BEIGE,
+            GameTile::UnbreakableWall => Color::MIDNIGHT_BLUE,
+            GameTile::DownStairs => Color::RED,
+            GameTile::UpStairs => Color::GREEN,
+        }
+    }
 }
 
 pub type GameMapTiles2D = Vec<GameTile>;
@@ -36,6 +60,7 @@ pub struct GameMap {
     pub width: usize,
     pub height: usize,
     pub tiles: GameMapTiles2D,
+    pub viewed_tiles: Vec<bool>,
     pub history: Vec<GameMapTiles2D>,
 }
 
@@ -47,6 +72,7 @@ impl GameMap {
             width,
             height,
             tiles: new_map,
+            viewed_tiles: vec![false; width * height],
             history: Vec::new(),
         }
     }
@@ -55,8 +81,12 @@ impl GameMap {
         self.width * y + x
     }
 
-    pub fn is_within_bounds(&self, x: usize, y: usize) -> bool {
-        x < self.width && y < self.height
+    pub fn xy_idx_pos(&self, pos: &Position) -> usize {
+        self.xy_idx(pos.x as usize, pos.y as usize)
+    }
+
+    pub fn is_within_bounds(&self, x: i32, y: i32) -> bool {
+        x >= 0 && y >= 0 && x < self.width as i32 && y < self.height as i32
     }
 
     pub fn fill(&mut self, tile: GameTile) {
@@ -91,7 +121,7 @@ impl GameMap {
                 let new_x = x + width_x;
                 let new_y = y + height_y;
 
-                if !self.is_within_bounds(new_x, new_y) {
+                if !self.is_within_bounds(new_x as i32, new_y as i32) {
                     continue;
                 }
 

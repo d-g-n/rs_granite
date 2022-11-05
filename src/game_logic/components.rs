@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use bevy::prelude::*;
 #[derive(Component, Eq, Hash, PartialEq, Clone, Debug)]
 pub struct Position {
@@ -18,3 +20,10 @@ pub struct Player {}
 
 #[derive(Component)]
 pub struct Blocker {}
+
+#[derive(Component)]
+pub struct Viewshed {
+    pub dirty: bool,
+    pub distance: u16,
+    pub visible_tiles: HashSet<Position>,
+}
