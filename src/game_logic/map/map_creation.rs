@@ -91,10 +91,10 @@ pub fn visualise_map(
             for y in 0..ctx.height {
                 let mut cur_tile = ctx.get_tile(x, y);
 
-                cur_tile.glyph = current_frame[map_vis.map.xy_idx(x, y)].get_char_rep();
-                cur_tile.visible = true;
-                cur_tile.bg_color = Color::BLACK;
-                cur_tile.fg_color = Color::WHITE;
+                cur_tile.glyph.char = current_frame[map_vis.map.xy_idx(x, y)].get_char_rep();
+                cur_tile.glyph.visible = true;
+                cur_tile.glyph.bg_color = Color::BLACK;
+                cur_tile.glyph.fg_color = Color::WHITE;
             }
         }
 

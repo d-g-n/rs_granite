@@ -50,5 +50,7 @@ fn main() {
         .add_plugin(sprites::SpritePlugin)
         .add_plugin(screen::ScreenPlugin)
         .add_plugin(game_logic::GameLogicPlugin)
+        .add_plugin(bevy::diagnostic::LogDiagnosticsPlugin::default())
+        .add_plugin(bevy::diagnostic::FrameTimeDiagnosticsPlugin::default())
         .run();
 }

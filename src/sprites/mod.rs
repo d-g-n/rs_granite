@@ -48,6 +48,7 @@ pub struct SpriteAssets {
     pub text_tex_atlas: Handle<TextureAtlas>,
 }
 
+#[derive(Clone)]
 pub struct SpriteSizes {
     pub map_sprite_width: f32,
     pub map_sprite_height: f32,

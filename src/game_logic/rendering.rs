@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use bevy::prelude::*;
 use iyes_loopless::prelude::*;
 
-use crate::screen::ScreenContext;
+use crate::screen::{ScreenContext, ScreenGlyph};
 
 use super::{
     components::{Player, Position, Renderable, Viewshed},
@@ -17,11 +17,24 @@ pub fn handle_renderable(
     mut query: Query<(Entity, &Position, &Renderable)>,
     mut viewshed_visibility_query: Query<&Viewshed, With<Player>>,
 ) {
+    if !map.is_changed() {
+        return;
+    }
+
+    ctx.draw_text(10, 10, |b| {
+        b.with_fg_colour(Color::RED)
+            .with_text("testing ")
+            .with_text("testing, 1 2 3 4 5, ")
+            .with_fg_colour(Color::CYAN)
+            .with_bg_colour(Color::ORANGE)
+            .with_text("SIX SEVEN!")
+    });
+
     let mut position_visibility_history: HashMap<Position, f32> = HashMap::new();
 
     let player_viewshed = viewshed_visibility_query.single();
 
-    ctx.clear();
+    //ctx.clear();
 
     for (_entity, position, renderable) in query.iter_mut() {
         let mut screen_tile = ctx.get_tile(position.x as usize, position.y as usize);
@@ -44,15 +57,15 @@ pub fn handle_renderable(
             renderable.glyph
         };
 
-        screen_tile.visible = player_viewshed.visible_tiles.contains(position)
+        screen_tile.glyph.visible = player_viewshed.visible_tiles.contains(position)
             || map.viewed_tiles[map.xy_idx_pos(position)];
 
-        screen_tile.glyph = glyph;
-        screen_tile.layer = renderable.layer;
+        screen_tile.glyph.char = glyph;
+        screen_tile.glyph.layer = renderable.layer;
 
         if player_viewshed.visible_tiles.contains(position) {
-            screen_tile.fg_color = renderable.fg;
-            screen_tile.bg_color = renderable.bg;
+            screen_tile.glyph.fg_color = renderable.fg;
+            screen_tile.glyph.bg_color = renderable.bg;
         } else {
             let linear_fg = renderable.fg.r() * 0.2126
                 + renderable.fg.g() * 0.7152
@@ -62,8 +75,8 @@ pub fn handle_renderable(
                 + renderable.bg.g() * 0.7152
                 + renderable.bg.b() * 0.0722;
 
-            screen_tile.fg_color = Color::rgb(linear_fg, linear_fg, linear_fg);
-            screen_tile.bg_color = Color::rgb(linear_bg, linear_bg, linear_bg);
+            screen_tile.glyph.fg_color = Color::rgb(linear_fg, linear_fg, linear_fg);
+            screen_tile.glyph.bg_color = Color::rgb(linear_bg, linear_bg, linear_bg);
         }
     }
 }
@@ -118,5 +131,63 @@ fn smooth_wall_rendering(map: &GameMap, x: i32, y: i32) -> u16 {
         14 => 203, // Wall to the east, west, and north
         15 => 206, // ╬ Wall on all sides
         _ => 35,   // We missed one?
+    }
+}
+
+fn bresenhams_line(start: &Position, end: &Position) -> Vec<Position> {
+    let dx = (end.x - start.x).abs();
+    let dy = (end.y - start.y).abs();
+
+    // slope bool indicates when slope >= 1
+
+    fn get_line_positions(
+        (mut x1, mut y1): (i32, i32),
+        (x2, y2): (i32, i32),
+        (dx, dy): (i32, i32),
+        slope_decision: bool,
+    ) -> Vec<Position> {
+        let mut pk = 2 * dy - dx;
+
+        let mut res = Vec::new();
+
+        for _i in 0..=dx {
+            if x1 < x2 {
+                x1 += 1;
+            } else {
+                x1 -= 1;
+            }
+
+            if pk < 0 {
+                if !slope_decision {
+                    res.push(Position { x: x1, y: y1 });
+                } else {
+                    res.push(Position { x: y1, y: x1 });
+                }
+
+                pk = pk + 2 * dy;
+            } else {
+                if y1 < y2 {
+                    y1 += 1;
+                } else {
+                    y1 -= 1;
+                }
+
+                if !slope_decision {
+                    res.push(Position { x: x1, y: y1 });
+                } else {
+                    res.push(Position { x: y1, y: x1 });
+                }
+
+                pk = pk + 2 * dy - 2 * dx;
+            }
+        }
+
+        res
+    }
+
+    if dx > dy {
+        get_line_positions((start.x, start.y), (end.x, end.y), (dx, dy), false)
+    } else {
+        get_line_positions((start.y, start.x), (end.y, end.x), (dy, dx), true)
     }
 }

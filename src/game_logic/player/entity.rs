@@ -85,16 +85,6 @@ pub fn handle_player_movement(
         player_pos.y = new_y;
 
         viewshed.dirty = true;
-
-        let astar = astar_next_step(&map, player_pos.clone(), Position { x: 1, y: 0 });
-
-        if let Some((res_vec, _no)) = astar {
-            for pos in res_vec.iter() {
-                let mut tile = ctx.get_tile(pos.x as usize, pos.y as usize);
-
-                tile.bg_color = Color::RED;
-            }
-        }
     }
 
     if !(direction_x == 0 && direction_y == 0) {
