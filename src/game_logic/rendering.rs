@@ -3,7 +3,10 @@ use std::collections::HashMap;
 use bevy::prelude::*;
 use iyes_loopless::prelude::*;
 
-use crate::screen::{ScreenContext, ScreenGlyph};
+use crate::{
+    camera::MousePositionOnScreen,
+    screen::{ScreenContext, ScreenGlyph},
+};
 
 use super::{
     components::{Player, Position, Renderable, Viewshed},
@@ -16,19 +19,23 @@ pub fn handle_renderable(
     map: ResMut<GameMap>,
     mut query: Query<(Entity, &Position, &Renderable)>,
     mut viewshed_visibility_query: Query<&Viewshed, With<Player>>,
+    mut mouse_res: ResMut<MousePositionOnScreen>,
 ) {
     if !map.is_changed() {
         return;
     }
 
-    ctx.draw_text(10, 10, |b| {
-        b.with_fg_colour(Color::RED)
-            .with_text("testing ")
-            .with_text("testing, 1 2 3 4 5, ")
-            .with_fg_colour(Color::CYAN)
-            .with_bg_colour(Color::ORANGE)
-            .with_text("SIX SEVEN!")
-    });
+    if let Some(mouse_map_res) = &mouse_res.mouse_pos_map_opt {
+        let res = ctx.draw_text(mouse_map_res.x as usize, mouse_map_res.y as usize, |b| {
+            b.with_fg_colour(Color::RED)
+                .with_text("testing ")
+                .with_text("testing, 1 2 3 4 5, ")
+                .with_fg_colour(Color::CYAN)
+                .with_bg_colour(Color::ORANGE)
+                .with_text("SIX SEVEN!")
+        });
+
+    }
 
     let mut position_visibility_history: HashMap<Position, f32> = HashMap::new();
 

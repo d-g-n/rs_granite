@@ -5,7 +5,7 @@ use crate::{
 use bevy::prelude::*;
 use iyes_loopless::prelude::*;
 
-#[derive(Clone, Default)]
+#[derive(Clone, Default, Debug)]
 pub struct ScreenGlyph {
     pub char: u16,
     pub fg_color: Color,
@@ -14,7 +14,7 @@ pub struct ScreenGlyph {
     pub layer: f32,
 }
 
-#[derive(Clone, Default)]
+#[derive(Clone, Default, Debug)]
 pub struct ScreenTile {
     pub x: usize,
     pub y: usize,
@@ -140,11 +140,21 @@ impl ScreenContext {
         &mut self.screen_vec[idx]
     }
 
+    pub fn is_in_bounds(&self, x: usize, y: usize) -> bool {
+        x < self.width && y < self.height
+    }
+
     // this should return something to indicate the end width of the string, or end coord, or vec of screen tiles impacted
-    pub fn draw_text<F>(&mut self, mut x: usize, y: usize, mut builder: F)
+    pub fn draw_text<F>(&mut self, mut x: usize, y: usize, mut builder: F) -> (usize, usize)
     where
         F: FnMut(ScreenTextBuilder) -> ScreenTextBuilder,
     {
+        if !self.is_in_bounds(x, y) {
+            panic!("Can't create text outside of screen bounds");
+        }
+
+        // issue here with text drawing logic, it struggles to draw over existing text
+
         let builder_vec = builder(ScreenTextBuilder::new()).build();
         // 16 / 8 = 2
         let text_per_map_tile_width = self.sprite_sizes.map_sprite_width as usize
@@ -152,7 +162,7 @@ impl ScreenContext {
 
         let mut char_vec = Vec::new();
 
-        for (oi, (fg, bg, string)) in builder_vec.iter().enumerate() {
+        'outer: for (oi, (fg, bg, string)) in builder_vec.iter().enumerate() {
             for (ii, ch) in string.chars().enumerate() {
                 // char_idx will only ever be 0 or 1, but means that it should move over
                 char_vec.push(ScreenGlyph {
@@ -168,6 +178,10 @@ impl ScreenContext {
                 {
                     // put on screen here
 
+                    if !self.is_in_bounds(x, y) {
+                        break 'outer;
+                    }
+
                     self.get_tile(x, y).tile_text = char_vec.clone();
 
                     x += 1;
@@ -175,6 +189,9 @@ impl ScreenContext {
                 }
             }
         }
+
+        // -1 is due to += at end of loop
+        (x - 1, y)
     }
 
     pub fn clear(&mut self) {
@@ -182,6 +199,7 @@ impl ScreenContext {
             screen_tile.glyph.char = 0;
             screen_tile.glyph.fg_color = Color::BLACK;
             screen_tile.glyph.fg_color = Color::BLACK;
+            screen_tile.tile_text.clear();
         }
     }
 }
@@ -244,15 +262,15 @@ pub fn render_screen(
 
         if entity_count > text_count {
             // if entity count is greater than text, then we need to delete entities
+            for i in 1..entity_count {
+                let text_entity = &screen_tile.sprite_entities[i];
+
+                commands.entity(*text_entity).despawn_recursive();
+            }
+
+            screen_tile.sprite_entities.truncate(1);
         } else if entity_count < text_count {
             // if entity count is less than text count, we need to create new text entities
-            let transform_position_x = (screen_tile.x * sprite_sizes.map_sprite_width as usize)
-                as f32
-                + (sprite_sizes.map_sprite_width / 2.);
-            let transform_position_y = (screen_tile.y * sprite_sizes.map_sprite_height as usize)
-                as f32
-                + (sprite_sizes.map_sprite_height / 2.);
-
             for i in 0..(text_count - 1) {
                 let text_entry = &screen_tile.tile_text[i];
 
@@ -287,12 +305,16 @@ pub fn render_screen(
         // if the screen_tile has more than one entry, there's the base tile plus text
         let has_text_sprites = screen_tile.sprite_entities.len() > 1;
         // if the current entity is not in position 0, ie not the base tile, then it's text
-        let is_entity_text = screen_tile
-            .sprite_entities
-            .iter()
-            .position(|e| e == &entity)
-            .unwrap()
-            > 0;
+        let is_entity_text = if has_text_sprites {
+            screen_tile
+                .sprite_entities
+                .iter()
+                .position(|e| e == &entity)
+                .unwrap()
+                > 0
+        } else {
+            false
+        };
 
         if has_text_sprites && is_entity_text {
             visibility.is_visible = true;
