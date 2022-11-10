@@ -1,7 +1,9 @@
 use bevy::{prelude::*, render::camera::RenderTarget};
 use iyes_loopless::prelude::*;
 
-use crate::{screen::ScreenContext, sprites::SpriteSizes, utils::Point, GameState, InGameState};
+use crate::{
+    screen::structs::ScreenContext, sprites::SpriteSizes, utils::Point, GameState, InGameState,
+};
 
 pub(crate) struct CameraPlugin;
 

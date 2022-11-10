@@ -8,7 +8,7 @@ use crate::{
         map::{game_map::GameMap, pathfinding::astar_next_step},
         resources::PlayerResource,
     },
-    screen::ScreenContext,
+    screen::structs::ScreenContext,
 };
 
 pub fn setup_player(mut commands: Commands, player_res: Res<PlayerResource>) {
@@ -43,6 +43,7 @@ pub fn handle_player_movement(
     time: Res<Time>,
     map: Res<GameMap>,
     mut held_counter: Local<HeldCounter>,
+    mut player_res: ResMut<PlayerResource>,
     mut player_position_query: Query<(Entity, &mut Position, &mut Viewshed), With<Player>>,
     blocker_position_query: Query<(Entity, &Position), (With<Blocker>, Without<Player>)>,
 ) {
@@ -83,6 +84,8 @@ pub fn handle_player_movement(
     {
         player_pos.x = new_x;
         player_pos.y = new_y;
+
+        player_res.cur_pos = Position { x: new_x, y: new_y };
 
         viewshed.dirty = true;
     }

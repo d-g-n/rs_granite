@@ -19,9 +19,13 @@ impl Plugin for MapPlugin {
             },
             map_creation::create_or_load_map,
         )
-        .add_system(map_creation::visualise_map.run_in_state(GameState::InGame {
-            game_state: InGameState::LoadMap,
-        }))
+        .add_system(
+            map_creation::visualise_map
+                .run_in_state(GameState::InGame {
+                    game_state: InGameState::LoadMap,
+                })
+                .before("render_screen"),
+        )
         .add_exit_system(
             GameState::InGame {
                 game_state: InGameState::LoadMap,

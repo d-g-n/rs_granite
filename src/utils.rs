@@ -1,3 +1,5 @@
+use crate::game_logic::components::Position;
+
 #[derive(Clone, Debug)]
 pub struct Point {
     pub x: i32,
@@ -7,6 +9,10 @@ pub struct Point {
 impl Point {
     pub fn new(x: i32, y: i32) -> Point {
         Point { x, y }
+    }
+
+    pub fn to_position(&self) -> Position {
+        Position { x: self.x, y: self.y }
     }
 }
 

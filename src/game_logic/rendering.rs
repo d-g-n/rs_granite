@@ -3,15 +3,43 @@ use std::collections::HashMap;
 use bevy::prelude::*;
 use iyes_loopless::prelude::*;
 
-use crate::{
-    camera::MousePositionOnScreen,
-    screen::{ScreenContext, ScreenGlyph},
-};
+use crate::{camera::MousePositionOnScreen, screen::structs::ScreenContext};
 
 use super::{
     components::{Player, Position, Renderable, Viewshed},
-    map::game_map::{GameMap, GameTile},
+    map::{
+        game_map::{GameMap, GameTile},
+        pathfinding::astar_next_step,
+    },
+    resources::PlayerResource,
 };
+
+pub fn handle_mouse_movement(
+    player_res: ResMut<PlayerResource>,
+    map: Res<GameMap>,
+    mut ctx: ResMut<ScreenContext>,
+    mut mouse_res: ResMut<MousePositionOnScreen>,
+    mut pathfinding_history: Local<Vec<Position>>,
+) {
+    // if the mouse res changed, calculate a route and store it
+
+    if mouse_res.is_changed() || player_res.is_changed() {
+        if let Some(mouse_pos_map) = &mouse_res.mouse_pos_map_opt {
+            let res = astar_next_step(
+                &map,
+                player_res.cur_pos.clone(),
+                mouse_pos_map.to_position(),
+            );
+
+            if let Some((pos_vec, _)) = res {
+                *pathfinding_history = pos_vec;
+            }
+        }
+    }
+    for ele in (*pathfinding_history).iter() {
+        ctx.get_tile(ele.x as usize, ele.y as usize).glyph.bg_color = Color::RED;
+    }
+}
 
 pub fn handle_renderable(
     mut _commands: Commands,
@@ -21,9 +49,7 @@ pub fn handle_renderable(
     mut viewshed_visibility_query: Query<&Viewshed, With<Player>>,
     mut mouse_res: ResMut<MousePositionOnScreen>,
 ) {
-    if !map.is_changed() {
-        return;
-    }
+    //println!("renderable update");
 
     if let Some(mouse_map_res) = &mouse_res.mouse_pos_map_opt {
         let res = ctx.draw_text(mouse_map_res.x as usize, mouse_map_res.y as usize, |b| {
@@ -34,7 +60,6 @@ pub fn handle_renderable(
                 .with_bg_colour(Color::ORANGE)
                 .with_text("SIX SEVEN!")
         });
-
     }
 
     let mut position_visibility_history: HashMap<Position, f32> = HashMap::new();

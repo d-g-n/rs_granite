@@ -16,7 +16,7 @@ use crate::{
         resources::PlayerResource,
     },
     rng::GameRNG,
-    screen::ScreenContext,
+    screen::structs::ScreenContext,
     GameState, InGameState,
 };
 
@@ -52,6 +52,8 @@ pub fn create_or_load_map(
 
     commands.insert_resource(PlayerResource {
         start_pos: map_builder.get_spawn_position(),
+        cur_pos: map_builder.get_spawn_position(),
+        move_waypoints: Vec::new(),
     });
 
     commands.insert_resource(MapVisualisation {
