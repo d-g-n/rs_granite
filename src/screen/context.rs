@@ -3,7 +3,9 @@ use iyes_loopless::prelude::*;
 
 use crate::sprites::SpriteSizes;
 
-use super::structs::{ScreenContext, ScreenGlyph, ScreenTextBuilder, ScreenTile};
+use super::structs::{
+    ScreenContext, ScreenGlyph, ScreenTextBuilder, ScreenTile, ScreenTilePriority,
+};
 
 /*
 pub fn name(mut self, bar: String) -> FooBuilder {
@@ -69,13 +71,40 @@ impl ScreenContext {
         self.width * y + x
     }
 
-    pub fn get_tile(&mut self, x: usize, y: usize) -> &mut ScreenTile {
+    pub fn get_tile(&mut self, x: usize, y: usize) -> ScreenTile {
+        let idx = self.xy_idx(x, y);
+        self.screen_vec[idx].clone()
+    }
+
+    pub(in crate::screen) fn get_tile_mut(&mut self, x: usize, y: usize) -> &mut ScreenTile {
         let idx = self.xy_idx(x, y);
         &mut self.screen_vec[idx]
     }
 
     pub fn is_in_bounds(&self, x: usize, y: usize) -> bool {
         x < self.width && y < self.height
+    }
+
+    pub fn draw_glyph<F>(
+        &mut self,
+        x: usize,
+        y: usize,
+        draw_priority: ScreenTilePriority,
+        mut tile_func: F,
+    ) where
+        F: FnMut(&mut ScreenTile),
+    {
+        let screen_tile = self.get_tile_mut(x, y);
+
+        if let Some(last_tile_priority) = &screen_tile.last_tile_priority {
+            if draw_priority < *last_tile_priority {
+                return;
+            }
+        }
+
+        tile_func(screen_tile);
+
+        screen_tile.last_tile_priority = Some(draw_priority);
     }
 
     // this should return something to indicate the end width of the string, or end coord, or vec of screen tiles impacted
@@ -116,7 +145,7 @@ impl ScreenContext {
                         break 'outer;
                     }
 
-                    self.get_tile(x, y).tile_text = char_vec.clone();
+                    self.get_tile_mut(x, y).tile_text = char_vec.clone();
 
                     x += 1;
                     char_vec.clear();
@@ -134,6 +163,7 @@ impl ScreenContext {
             screen_tile.glyph.fg_color = Color::BLACK;
             screen_tile.glyph.fg_color = Color::BLACK;
             screen_tile.tile_text.clear();
+            screen_tile.last_tile_priority = None;
         }
     }
 }

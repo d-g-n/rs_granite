@@ -25,7 +25,7 @@ impl Position {
         ((dx + dy) + (d2 - 2.) * f32::min(dx, dy))
     } */
 
-    fn successors(&self, map: &GameMap) -> Vec<(Position, u32)> {
+    fn successors(&self, map: &GameMap, from: &Position, to: &Position) -> Vec<(Position, u32)> {
         let &Position { x, y } = self;
 
         let res = vec![
@@ -40,7 +40,7 @@ impl Position {
         ]
         .into_iter()
         .filter(|p| p.is_valid(map))
-        .filter(|p| !map.tiles[map.xy_idx(p.x as usize, p.y as usize)].is_blocker())
+        .filter(|p| !map.is_blocker(p.x, p.y) || p == from || p == to)
         .map(|p| (p.clone(), self.distance(&p)))
         .collect();
 
@@ -55,7 +55,7 @@ pub fn astar_next_step(
 ) -> Option<(Vec<Position>, u32)> {
     astar(
         &from,
-        |p| p.successors(map),
+        |p| p.successors(map, &from, &to),
         |p| p.distance(&to),
         |p| *p == to,
     )

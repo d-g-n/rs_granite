@@ -1,19 +1,13 @@
-use std::collections::HashMap;
-
 use bevy::prelude::*;
 use iyes_loopless::prelude::*;
 
 use crate::{GameState, InGameState};
 
-use self::{
-    components::{Player, Position, Renderable, Viewshed},
-    map::game_map::{GameMap, GameTile},
-    rendering::{handle_mouse_movement, handle_renderable},
-    viewshed::handle_viewshed_updating,
-};
+use self::{rendering::handle_renderable, viewshed::handle_viewshed_updating};
 
 pub mod components;
 mod map;
+mod monster;
 mod player;
 mod rendering;
 mod resources;
@@ -24,6 +18,7 @@ pub(crate) struct GameLogicPlugin;
 impl Plugin for GameLogicPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(player::PlayerPlugin)
+            .add_plugin(monster::MonsterPlugin)
             .add_plugin(map::MapPlugin) //
             .add_system(
                 handle_renderable
@@ -48,20 +43,6 @@ impl Plugin for GameLogicPlugin {
                     GameState::InGame { .. } => true,
                     _ => false,
                 },
-            ))
-            .add_system(
-                handle_mouse_movement
-                    .run_if(
-                        move |cur_state: Res<CurrentState<GameState>>| match cur_state.0 {
-                            GameState::InGame {
-                                game_state: InGameState::LoadMap,
-                            } => false,
-                            GameState::InGame { .. } => true,
-                            _ => false,
-                        },
-                    )
-                    .after("renderable_system")
-                    .before("render_screen"),
-            );
+            ));
     }
 }

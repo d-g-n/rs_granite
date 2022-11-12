@@ -94,7 +94,7 @@ pub fn render_screen(
     for (entity, screen_tile_pos, mut visibility, mut transform, mut fg_sprite, mut bg_sprite) in
         query.iter_mut()
     {
-        let screen_tile = ctx.get_tile(screen_tile_pos.x, screen_tile_pos.y);
+        let screen_tile = ctx.get_tile_mut(screen_tile_pos.x, screen_tile_pos.y);
 
         // the below block of code, as well as the backwards entity lookup is hideously slow
 

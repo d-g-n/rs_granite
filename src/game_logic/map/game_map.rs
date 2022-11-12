@@ -61,6 +61,7 @@ pub struct GameMap {
     pub height: usize,
     pub tiles: GameMapTiles2D,
     pub viewed_tiles: Vec<bool>,
+    pub blocking_tiles: Vec<bool>,
     pub history: Vec<GameMapTiles2D>,
 }
 
@@ -73,6 +74,7 @@ impl GameMap {
             height,
             tiles: new_map,
             viewed_tiles: vec![false; width * height],
+            blocking_tiles: vec![false; width * height],
             history: Vec::new(),
         }
     }
@@ -87,6 +89,14 @@ impl GameMap {
 
     pub fn is_within_bounds(&self, x: i32, y: i32) -> bool {
         x >= 0 && y >= 0 && x < self.width as i32 && y < self.height as i32
+    }
+
+    pub fn is_opaque(&self, x: i32, y: i32) -> bool {
+        self.tiles[self.xy_idx(x as usize, y as usize)].is_opaque()
+    }
+
+    pub fn is_blocker(&self, x: i32, y: i32) -> bool {
+        self.blocking_tiles[self.xy_idx(x as usize, y as usize)]
     }
 
     pub fn fill(&mut self, tile: GameTile) {

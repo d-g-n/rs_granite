@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, window::PresentMode};
 use iyes_loopless::prelude::*;
 
 use rng::GameRNG;
@@ -14,8 +14,8 @@ pub mod utils;
 pub enum InGameState {
     LoadMap,
     AwaitingInput,
-    GameTurn,
-    CleanUp,
+    PlayerTurn,
+    EnemyTurn,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
@@ -40,6 +40,7 @@ fn main() {
         .insert_resource(WindowDescriptor {
             // fill the entire browser window
             //fit_canvas_to_parent: true,
+            //present_mode: PresentMode::AutoNoVsync,
             ..default()
         })
         .insert_resource(ClearColor(Color::BLACK))

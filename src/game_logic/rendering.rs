@@ -3,7 +3,10 @@ use std::collections::HashMap;
 use bevy::prelude::*;
 use iyes_loopless::prelude::*;
 
-use crate::{camera::MousePositionOnScreen, screen::structs::ScreenContext};
+use crate::{
+    camera::MousePositionOnScreen,
+    screen::structs::{ScreenContext, ScreenTilePriority},
+};
 
 use super::{
     components::{Player, Position, Renderable, Viewshed},
@@ -13,33 +16,6 @@ use super::{
     },
     resources::PlayerResource,
 };
-
-pub fn handle_mouse_movement(
-    player_res: ResMut<PlayerResource>,
-    map: Res<GameMap>,
-    mut ctx: ResMut<ScreenContext>,
-    mut mouse_res: ResMut<MousePositionOnScreen>,
-    mut pathfinding_history: Local<Vec<Position>>,
-) {
-    // if the mouse res changed, calculate a route and store it
-
-    if mouse_res.is_changed() || player_res.is_changed() {
-        if let Some(mouse_pos_map) = &mouse_res.mouse_pos_map_opt {
-            let res = astar_next_step(
-                &map,
-                player_res.cur_pos.clone(),
-                mouse_pos_map.to_position(),
-            );
-
-            if let Some((pos_vec, _)) = res {
-                *pathfinding_history = pos_vec;
-            }
-        }
-    }
-    for ele in (*pathfinding_history).iter() {
-        ctx.get_tile(ele.x as usize, ele.y as usize).glyph.bg_color = Color::RED;
-    }
-}
 
 pub fn handle_renderable(
     mut _commands: Commands,
@@ -69,7 +45,7 @@ pub fn handle_renderable(
     //ctx.clear();
 
     for (_entity, position, renderable) in query.iter_mut() {
-        let mut screen_tile = ctx.get_tile(position.x as usize, position.y as usize);
+        let (x, y) = (position.x as usize, position.y as usize);
 
         if !position_visibility_history.contains_key(position) {
             position_visibility_history.insert(position.clone(), renderable.layer);
@@ -89,15 +65,18 @@ pub fn handle_renderable(
             renderable.glyph
         };
 
-        screen_tile.glyph.visible = player_viewshed.visible_tiles.contains(position)
-            || map.viewed_tiles[map.xy_idx_pos(position)];
-
-        screen_tile.glyph.char = glyph;
-        screen_tile.glyph.layer = renderable.layer;
+        ctx.draw_glyph(x, y, ScreenTilePriority::Entity, |screen_tile| {
+            screen_tile.glyph.visible = player_viewshed.visible_tiles.contains(position)
+                || map.viewed_tiles[map.xy_idx_pos(position)];
+            screen_tile.glyph.char = glyph;
+            screen_tile.glyph.layer = renderable.layer;
+        });
 
         if player_viewshed.visible_tiles.contains(position) {
-            screen_tile.glyph.fg_color = renderable.fg;
-            screen_tile.glyph.bg_color = renderable.bg;
+            ctx.draw_glyph(x, y, ScreenTilePriority::Entity, |screen_tile| {
+                screen_tile.glyph.fg_color = renderable.fg;
+                screen_tile.glyph.bg_color = renderable.bg;
+            });
         } else {
             let linear_fg = renderable.fg.r() * 0.2126
                 + renderable.fg.g() * 0.7152
@@ -107,8 +86,10 @@ pub fn handle_renderable(
                 + renderable.bg.g() * 0.7152
                 + renderable.bg.b() * 0.0722;
 
-            screen_tile.glyph.fg_color = Color::rgb(linear_fg, linear_fg, linear_fg);
-            screen_tile.glyph.bg_color = Color::rgb(linear_bg, linear_bg, linear_bg);
+            ctx.draw_glyph(x, y, ScreenTilePriority::Entity, |screen_tile| {
+                screen_tile.glyph.fg_color = Color::rgb(linear_fg, linear_fg, linear_fg);
+                screen_tile.glyph.bg_color = Color::rgb(linear_bg, linear_bg, linear_bg);
+            });
         }
     }
 }
@@ -163,63 +144,5 @@ fn smooth_wall_rendering(map: &GameMap, x: i32, y: i32) -> u16 {
         14 => 203, // Wall to the east, west, and north
         15 => 206, // ╬ Wall on all sides
         _ => 35,   // We missed one?
-    }
-}
-
-fn bresenhams_line(start: &Position, end: &Position) -> Vec<Position> {
-    let dx = (end.x - start.x).abs();
-    let dy = (end.y - start.y).abs();
-
-    // slope bool indicates when slope >= 1
-
-    fn get_line_positions(
-        (mut x1, mut y1): (i32, i32),
-        (x2, y2): (i32, i32),
-        (dx, dy): (i32, i32),
-        slope_decision: bool,
-    ) -> Vec<Position> {
-        let mut pk = 2 * dy - dx;
-
-        let mut res = Vec::new();
-
-        for _i in 0..=dx {
-            if x1 < x2 {
-                x1 += 1;
-            } else {
-                x1 -= 1;
-            }
-
-            if pk < 0 {
-                if !slope_decision {
-                    res.push(Position { x: x1, y: y1 });
-                } else {
-                    res.push(Position { x: y1, y: x1 });
-                }
-
-                pk = pk + 2 * dy;
-            } else {
-                if y1 < y2 {
-                    y1 += 1;
-                } else {
-                    y1 -= 1;
-                }
-
-                if !slope_decision {
-                    res.push(Position { x: x1, y: y1 });
-                } else {
-                    res.push(Position { x: y1, y: x1 });
-                }
-
-                pk = pk + 2 * dy - 2 * dx;
-            }
-        }
-
-        res
-    }
-
-    if dx > dy {
-        get_line_positions((start.x, start.y), (end.x, end.y), (dx, dy), false)
-    } else {
-        get_line_positions((start.y, start.x), (end.y, end.x), (dy, dx), true)
     }
 }

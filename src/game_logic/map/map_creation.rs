@@ -16,7 +16,7 @@ use crate::{
         resources::PlayerResource,
     },
     rng::GameRNG,
-    screen::structs::ScreenContext,
+    screen::structs::{ScreenContext, ScreenTilePriority},
     GameState, InGameState,
 };
 
@@ -91,12 +91,14 @@ pub fn visualise_map(
 
         for x in 0..ctx.width {
             for y in 0..ctx.height {
-                let mut cur_tile = ctx.get_tile(x, y);
+                //let mut cur_tile = ctx.get_tile(x, y);
 
-                cur_tile.glyph.char = current_frame[map_vis.map.xy_idx(x, y)].get_char_rep();
-                cur_tile.glyph.visible = true;
-                cur_tile.glyph.bg_color = Color::BLACK;
-                cur_tile.glyph.fg_color = Color::WHITE;
+                ctx.draw_glyph(x, y, ScreenTilePriority::Map, |screen_tile| {
+                    screen_tile.glyph.char = current_frame[map_vis.map.xy_idx(x, y)].get_char_rep();
+                    screen_tile.glyph.visible = true;
+                    screen_tile.glyph.bg_color = Color::BLACK;
+                    screen_tile.glyph.fg_color = Color::WHITE;
+                });
             }
         }
 
@@ -116,6 +118,7 @@ pub fn finalise_map_creation(mut commands: Commands, mut map: ResMut<GameMap>) {
         for y in 0..map.height {
             let game_tile = map.tiles[map.xy_idx(x, y)];
 
+            // this checks to see if the tile itself would be considered a blocker, dynamic blocking is handled elsewhere
             if game_tile.is_blocker() {
                 tile_components_blockers.push((
                     Position {

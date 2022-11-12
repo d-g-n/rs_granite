@@ -12,13 +12,22 @@ pub struct ScreenGlyph {
     pub layer: f32,
 }
 
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum ScreenTilePriority {
+    Map,
+    Entity,
+    Tooltip,
+    UI,
+}
+
 #[derive(Clone, Default)]
 pub struct ScreenTile {
     pub x: usize,
     pub y: usize,
+    pub(in crate::screen) last_tile_priority: Option<ScreenTilePriority>,
     pub glyph: ScreenGlyph,
-    pub tile_text: Vec<ScreenGlyph>,
-    pub sprite_entities: Vec<Entity>,
+    pub(in crate::screen) tile_text: Vec<ScreenGlyph>,
+    pub(in crate::screen) sprite_entities: Vec<Entity>,
 }
 
 #[derive(Clone)]
@@ -26,7 +35,7 @@ pub struct ScreenContext {
     pub width: usize,
     pub height: usize,
     pub(in crate::screen) sprite_sizes: SpriteSizes,
-    pub screen_vec: Vec<ScreenTile>,
+    pub(in crate::screen) screen_vec: Vec<ScreenTile>,
 }
 
 #[derive(Component)]

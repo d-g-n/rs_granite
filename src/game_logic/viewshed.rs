@@ -16,6 +16,10 @@ pub fn handle_viewshed_updating(
     for (_entity, position, mut viewshed) in viewshed_query.iter_mut() {
         let mut new_viewshed = HashSet::new();
 
+        // for a circle of radius viewshed.distance, draw a bres line to each tile on the circle
+
+        new_viewshed.insert(position.clone());
+
         for i in (0..360).step_by(3) {
             let x_rot = (i as f32 * 0.01745).cos();
             let y_rot = (i as f32 * 0.01745).sin();
@@ -44,6 +48,28 @@ pub fn handle_viewshed_updating(
             }
         }
 
+        /* for pos in bres_circle(position, viewshed.distance as i32) {
+            let line = bresenhams_line(position, &pos);
+
+            let mut stop_on_next = false;
+
+            for line_pos in line {
+                if stop_on_next {
+                    break;
+                }
+
+                let is_opaque = map.is_opaque(line_pos.x, line_pos.y);
+                if map.is_within_bounds(line_pos.x, line_pos.y) {
+                    // can make this more efficient probably by just evaluating the line in here and bailing early
+                    new_viewshed.insert(line_pos);
+                }
+
+                if is_opaque {
+                    stop_on_next = true;
+                }
+            }
+        } */
+
         for viewshed_pos in new_viewshed.iter() {
             let idx = map.xy_idx_pos(viewshed_pos);
 
@@ -52,175 +78,97 @@ pub fn handle_viewshed_updating(
 
         viewshed.visible_tiles = new_viewshed;
         viewshed.dirty = false;
-
-        /*
-        for (var row = 1; row < maxDistance; row++) {
-          for (var col = 0; col <= row; col++) {
-            var x = hero.x + col;
-            var y = hero.y - row;
-
-            paint(x, y);
-          }
-        } */
-        /*
-        let mut new_viewshed = HashSet::new();
-
-        // can see ourselves
-        new_viewshed.insert(position.clone());
-
-        for octant in 0..1 {
-            let mut shadow_line = ShadowLine {
-                shadows: Vec::new(),
-            };
-            let mut full_shadow = false;
-
-            for row in 1..viewshed.distance {
-                for col in 0..=row {
-                    let (row_o, col_o) = transform_octant(row as i32, col as i32, octant);
-                    let x = position.x + col_o;
-                    let y = position.y - row_o;
-
-                    if !map.is_within_bounds(x, y) {
-                        break;
-                    }
-
-                    if !full_shadow {
-                        let mut projection = Shadow::project_tile(row.into(), col.into());
-
-                        let visible = !shadow_line.is_in_shadow(&mut projection);
-
-                        if visible {
-                            new_viewshed.insert(Position { x, y });
-                        }
-
-                        if visible
-                            && map.tiles[map.xy_idx(x as usize, y as usize)] == GameTile::Wall
-                        {
-                            shadow_line.add(&mut projection);
-                            full_shadow = shadow_line.is_full_shadow();
-                        }
-                    }
-                }
-            }
-        }
-
-        viewshed.visible_tiles = new_viewshed;
-        viewshed.dirty = false; */
     }
 }
 
-/*
-Vec transformOctant(int row, int col, int octant) {
-  switch (octant) {
-    case 0: return Vec( col, -row);
-    case 1: return Vec( row, -col);
-    case 2: return Vec( row,  col);
-    case 3: return Vec( col,  row);
-    case 4: return Vec(-col,  row);
-    case 5: return Vec(-row,  col);
-    case 6: return Vec(-row, -col);
-    case 7: return Vec(-col, -row);
-  }
-} */
+fn bres_circle(center: &Position, radius: i32) -> Vec<Position> {
+    let mut d = 3 - 2 * radius;
+    let mut x = 0;
+    let mut y = radius;
 
-fn transform_octant(row: i32, col: i32, octant: i32) -> (i32, i32) {
-    // 2 is actually where i want to start
-    match octant {
-        //0 => (row, col),   // bottom right
-        //1 => (row, -col),  // bottom left
-        //2 => (col, -row),  // left bottom
-        //3 => (-col, -row), // left top
-        //4 => (-row, -col), // top left
-        //5 => (-row, col),  // top right
-        //6 => (-col, row),  // right top
-        //7 => (col, row),   // right bottom
-        0 => (col, -row),
-        1 => (row, -col),
-        2 => (row, col),
-        3 => (col, row),
-        4 => (-col, row),
-        5 => (-row, col),
-        6 => (-row, -col),
-        7 => (-col, -row),
-        _ => (row, col),
-    }
-}
+    let Position { x: p, y: q } = center;
 
-#[derive(PartialEq, Clone)]
-struct Shadow {
-    pub start: i32,
-    pub end: i32,
-}
+    let mut out_pos = Vec::new();
 
-impl Shadow {
-    pub fn project_tile(row: i32, col: i32) -> Shadow {
-        let top_left = col / (row + 2);
-        let bottom_right = (col + 1) / (row + 1);
+    while x < y {
+        out_pos.push((x + p, y + q));
+        out_pos.push((y + p, x + q));
+        out_pos.push((-y + p, x + q));
+        out_pos.push((-x + p, y + q));
+        out_pos.push((-x + p, -y + q));
+        out_pos.push((-y + p, -x + q));
+        out_pos.push((y + p, -x + q));
+        out_pos.push((x + p, -y + q));
 
-        Shadow {
-            start: top_left,
-            end: bottom_right,
-        }
-    }
-
-    pub fn contains(&self, other: &Shadow) -> bool {
-        self.start <= other.start && self.end >= other.end
-    }
-}
-
-struct ShadowLine {
-    pub shadows: Vec<Shadow>,
-}
-
-impl ShadowLine {
-    pub fn is_in_shadow(&self, projection: &mut Shadow) -> bool {
-        for shadow in self.shadows.iter() {
-            if shadow.contains(projection) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    pub fn is_full_shadow(&self) -> bool {
-        self.shadows.len() == 1 && self.shadows[0].start == 0 && self.shadows[0].end == 1
-    }
-
-    pub fn add(&mut self, shadow: &mut Shadow) {
-        let mut index = 0;
-        for ele in self.shadows.iter() {
-            if ele.start >= shadow.start {
-                break;
-            }
-            index += 1;
-        }
-
-        let shadow_clone = self.shadows.clone();
-
-        let mut overlapping_previous_opt: Option<usize> = None;
-        if index > 0 && self.shadows[index - 1].end > shadow.start {
-            overlapping_previous_opt = Some(index - 1);
-        }
-
-        let mut overlapping_next_opt: Option<usize> = None;
-        if index < shadow_clone.len() && shadow_clone[index].start < shadow.end {
-            overlapping_next_opt = Some(index);
-        }
-
-        if let Some(overlapping_next) = overlapping_next_opt {
-            if let Some(overlapping_previous) = overlapping_previous_opt {
-                self.shadows[overlapping_previous].end = shadow.end;
-                self.shadows.remove(index);
-            } else {
-                self.shadows[overlapping_next].start = shadow.start;
-            }
+        if d < 0 {
+            d = d + 4 * x + 6;
         } else {
-            if let Some(overlapping_previous) = overlapping_previous_opt {
-                self.shadows[overlapping_previous].end = shadow.end;
+            d = d + 4 * (x - y) + 10;
+            y -= 1;
+        }
+        x += 1;
+    }
+
+    out_pos
+        .iter()
+        .map(|(px, py)| Position { x: *px, y: *py })
+        .collect()
+}
+
+fn bresenhams_line(start: &Position, end: &Position) -> Vec<Position> {
+    let dx = (end.x - start.x).abs();
+    let dy = (end.y - start.y).abs();
+
+    // slope bool indicates when slope >= 1
+
+    fn get_line_positions(
+        (mut x1, mut y1): (i32, i32),
+        (x2, y2): (i32, i32),
+        (dx, dy): (i32, i32),
+        slope_decision: bool,
+    ) -> Vec<Position> {
+        let mut pk = 2 * dy - dx;
+
+        let mut res = Vec::new();
+
+        for _i in 0..=dx {
+            if x1 < x2 {
+                x1 += 1;
             } else {
-                self.shadows.insert(index, shadow.clone());
+                x1 -= 1;
+            }
+
+            if pk < 0 {
+                if !slope_decision {
+                    res.push(Position { x: x1, y: y1 });
+                } else {
+                    res.push(Position { x: y1, y: x1 });
+                }
+
+                pk = pk + 2 * dy;
+            } else {
+                if y1 < y2 {
+                    y1 += 1;
+                } else {
+                    y1 -= 1;
+                }
+
+                if !slope_decision {
+                    res.push(Position { x: x1, y: y1 });
+                } else {
+                    res.push(Position { x: y1, y: x1 });
+                }
+
+                pk = pk + 2 * dy - 2 * dx;
             }
         }
+
+        res
+    }
+
+    if dx > dy {
+        get_line_positions((start.x, start.y), (end.x, end.y), (dx, dy), false)
+    } else {
+        get_line_positions((start.y, start.x), (end.y, end.x), (dy, dx), true)
     }
 }

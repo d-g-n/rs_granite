@@ -19,6 +19,9 @@ pub struct Renderable {
 pub struct Player {}
 
 #[derive(Component)]
+pub struct Monster {}
+
+#[derive(Component)]
 pub struct Blocker {}
 
 #[derive(Component)]
